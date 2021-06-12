@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSON;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.logging.Logger;
 
 /**
@@ -12,14 +13,15 @@ import java.util.logging.Logger;
  */
 public class GenerateRRSets {
     public Graph graph = new Graph();
-    private final String basePath = "/Users/coconut/code/git/research/GCOMB-Research/IM/IM_TV/GraphSAGE-master/real_data/%s/TV/test/";
+    private String basePath = "";
     private static Logger log = Logger.getLogger(GenerateRRSets.class.getName());
 
-    public static void generate(String dataset, int num) throws IOException {
+    public static void generate(String dataset, int num, String basePath) throws IOException {
         GenerateRRSets inf = new GenerateRRSets();
-        log.info(String.format("Loading com.cityu.im.Graph %s", dataset));
+        inf.basePath = basePath;
+        log.info(String.format("Loading Graph %s", dataset));
         inf.readData(dataset);
-        log.info(String.format("com.cityu.im.Graph loaded, n=%d, m=%d", inf.graph.n, inf.graph.m));
+        log.info(String.format("Graph loaded, n=%d, m=%d", inf.graph.n, inf.graph.m));
         log.info(String.format("To Generate %d RR Sets", num));
         Long st = System.currentTimeMillis();
         RRSets S = inf.generateRRSets(num);
@@ -54,7 +56,7 @@ public class GenerateRRSets {
         osw.write(jsonString);
         osw.flush();
         osw.close();
-        log.info(String.format("com.cityu.im.RRSets dumped to %s", file));
+        log.info(String.format("main.java.com.cityu.im.RRSets dumped to %s", file));
     }
 
 }

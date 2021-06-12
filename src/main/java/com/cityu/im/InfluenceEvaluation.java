@@ -14,16 +14,18 @@ import java.util.logging.Logger;
  * @date 2021/6/11 6:10 下午
  */
 public class InfluenceEvaluation {
-    private final String basePath = "/Users/coconut/code/git/research/GCOMB-Research/IM/IM_TV/GraphSAGE-master/real_data/%s/TV/test/";
+    private String basePath = "";
     //    private final List<Integer> budgets = new ArrayList<>(Arrays.asList(300, 2725, 5150, 7575, 10000));
-    private final List<Integer> budgets = new ArrayList<>(Arrays.asList(10, 20, 50, 100, 200));
+    private List<Integer> budgets;
     private static Logger log = Logger.getLogger(InfluenceEvaluation.class.getName());
 
-    public static void eval(String dataset, int num) throws IOException {
+    public static void eval(String dataset, int num, String basePath, List<Integer> budgets) throws IOException {
         InfluenceEvaluation inf = new InfluenceEvaluation();
+        inf.basePath = basePath;
+        inf.budgets = budgets;
         log.info(String.format("Loading %s %d RR Sets", dataset, num));
         RRSets rrSets = inf.loadRRSets(dataset, num);
-        log.info("RR Sets Loaded");
+        log.info("RR Sets Loaded, eval on budges " + Arrays.toString(budgets.toArray()));
         ArrayList<Double> influences = inf.evaluation(dataset, 5, rrSets);
         inf.writeResult(dataset, influences);
     }
@@ -68,7 +70,7 @@ public class InfluenceEvaluation {
                 influence += evaluation(S, seeds);
             }
             influence /= n_iter;
-            log.info(String.format("Budget %d average Influence %f", budget, influence));
+            log.info(String.format("Budget %d average Influence: %f, coverage: %f", budget, influence, influence / S.hyperGT.size()));
             influences.add(influence);
         }
         return influences;

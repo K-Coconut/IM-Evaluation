@@ -58,7 +58,7 @@
                     <archive>
                         <manifest>
                             <addClasspath>true</addClasspath>
-                            <mainClass>com.cityu.im.Application</mainClass>
+                            <mainClass>Application</mainClass>
                         </manifest>
                     </archive>
                 </configuration>
