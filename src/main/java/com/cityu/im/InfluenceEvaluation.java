@@ -26,8 +26,8 @@ public class InfluenceEvaluation {
         log.info(String.format("Loading %s %d RR Sets", dataset, num));
         RRSets rrSets = inf.loadRRSets(dataset, num);
         log.info("RR Sets Loaded, eval on budges " + Arrays.toString(budgets.toArray()));
-        ArrayList<Double> influences = inf.evaluation(dataset, 5, rrSets);
-        inf.writeResult(dataset, influences);
+        ArrayList<Double> coverage = inf.evaluation(dataset, 5, rrSets);
+        inf.writeResult(dataset, coverage);
     }
 
     public RRSets loadRRSets(String dataset, int num) throws IOException {
@@ -55,7 +55,7 @@ public class InfluenceEvaluation {
     }
 
     public ArrayList<Double> evaluation(String dataset, int n_iter, RRSets S) throws IOException {
-        ArrayList<Double> influences = new ArrayList<>();
+        ArrayList<Double> coverage = new ArrayList<>();
         for (int budget : budgets) {
             double influence = 0.;
             for (int iter = 0; iter < n_iter; iter++) {
@@ -71,17 +71,17 @@ public class InfluenceEvaluation {
             }
             influence /= n_iter;
             log.info(String.format("Budget %d average Influence: %f, coverage: %f", budget, influence, influence / S.hyperGT.size()));
-            influences.add(influence);
+            coverage.add(influence / S.hyperGT.size());
         }
-        return influences;
+        return coverage;
     }
 
-    public void writeResult(String dataset, List<Double> influences) throws IOException {
+    public void writeResult(String dataset, List<Double> coverage) throws IOException {
         String path = String.format(this.basePath + "imm_influence.txt", dataset);
         FileOutputStream outputStream = new FileOutputStream(new File(path));
         OutputStreamWriter ows = new OutputStreamWriter(outputStream);
         for (int i = 0; i < this.budgets.size(); i++) {
-            ows.write(String.format("%d:%f\n", this.budgets.get(i), influences.get(i)));
+            ows.write(String.format("%d:%f\n", this.budgets.get(i), coverage.get(i)));
         }
         ows.flush();
         ows.close();
