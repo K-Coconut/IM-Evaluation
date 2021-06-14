@@ -4,7 +4,9 @@ import com.alibaba.fastjson.JSON;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Logger;
 
 /**
@@ -46,17 +48,22 @@ public class GenerateRRSets {
     }
 
     public void dumpRRSets(RRSets S, String dataset, int num) throws IOException {
-        String jsonString = JSON.toJSONString(S);
         String dirPath = String.format(this.basePath, dataset) + "/large_graph/mc_RR_Sets/";
         boolean mkdirs = new File(dirPath).mkdirs();
         if (mkdirs) System.out.printf("Create Directory: %s", dirPath);
         String file = dirPath + String.format("RR%d", num);
         FileOutputStream fileOut = new FileOutputStream(new File(file));
         OutputStreamWriter osw = new OutputStreamWriter(fileOut, StandardCharsets.UTF_8);
-        osw.write(jsonString);
+        for (List<Integer> rr : S.hyperGT) {
+            osw.write(rr.toString() + "\n");
+        }
+        osw.write("\n");
+        for (Map.Entry<Integer, List<Integer>> set : S.hyperG.entrySet()) {
+            osw.write(set.getKey() + ":" + set.getValue().toString() + "\n");
+        }
         osw.flush();
         osw.close();
-        log.info(String.format("main.java.com.cityu.im.RRSets dumped to %s", file));
+        log.info(String.format("RRSets dumped to %s", file));
     }
 
 }

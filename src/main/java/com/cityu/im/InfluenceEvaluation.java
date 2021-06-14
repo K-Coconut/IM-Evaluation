@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  * @author Ethan
@@ -34,9 +35,19 @@ public class InfluenceEvaluation {
         String filePath = String.format(basePath + "/large_graph/mc_RR_Sets/RR%d", dataset, num);
         InputStreamReader in = new InputStreamReader(new FileInputStream(filePath), StandardCharsets.UTF_8);
         BufferedReader bufferedReader = new BufferedReader(in);
-        String s = bufferedReader.readLine();
+        RRSets S = new RRSets();
+        String text = null;
+        while ((text = bufferedReader.readLine()) != null && !text.equals("")) {
+            List<Integer> rr = Arrays.asList(text.substring(1, text.length() - 1).split(", ")).stream().map(Integer::parseInt).collect(Collectors.toList());
+            S.hyperGT.add(rr);
+        }
+        while ((text = bufferedReader.readLine()) != null) {
+            String[] split = text.split(":");
+            List<Integer> rr = Arrays.asList(split[1].substring(1, split[1].length() - 1).split(", ")).stream().map(Integer::parseInt).collect(Collectors.toList());
+            S.hyperG.put(Integer.parseInt(split[0]), rr);
+        }
         bufferedReader.close();
-        return JSON.parseObject(s, RRSets.class);
+        return S;
     }
 
     public double evaluation(RRSets S, List<Integer> seeds) {
