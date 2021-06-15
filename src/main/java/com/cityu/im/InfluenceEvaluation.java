@@ -1,7 +1,5 @@
 package com.cityu.im;
 
-import com.alibaba.fastjson.JSON;
-
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -16,18 +14,19 @@ import java.util.stream.Collectors;
  */
 public class InfluenceEvaluation {
     private String basePath = "";
-    //    private final List<Integer> budgets = new ArrayList<>(Arrays.asList(300, 2725, 5150, 7575, 10000));
+    private String mode;
     private List<Integer> budgets;
     private static Logger log = Logger.getLogger(InfluenceEvaluation.class.getName());
 
-    public static void eval(String dataset, int num, String basePath, List<Integer> budgets) throws IOException {
+    public static void eval(String mode, String dataset, int num, String basePath, List<Integer> budgets) throws IOException {
         InfluenceEvaluation inf = new InfluenceEvaluation();
+        inf.mode = mode;
         inf.basePath = basePath;
         inf.budgets = budgets;
         log.info(String.format("Loading %s %d RR Sets", dataset, num));
         RRSets rrSets = inf.loadRRSets(dataset, num);
         log.info("RR Sets Loaded, eval on budges " + Arrays.toString(budgets.toArray()));
-        ArrayList<Double> coverage = inf.evaluation(dataset, 5, rrSets);
+        ArrayList<Double> coverage = inf.evaluate(dataset, 5, rrSets);
         inf.writeResult(dataset, coverage);
     }
 
@@ -50,7 +49,7 @@ public class InfluenceEvaluation {
         return S;
     }
 
-    public double evaluation(RRSets S, List<Integer> seeds) {
+    public double evaluate(RRSets S, List<Integer> seeds) {
         int cover = 0;
         boolean[] visitedRR = new boolean[S.hyperGT.size()];
 
@@ -65,36 +64,61 @@ public class InfluenceEvaluation {
         return cover;
     }
 
-    public ArrayList<Double> evaluation(String dataset, int n_iter, RRSets S) throws IOException {
+    public ArrayList<Double> evaluate(String dataset, int n_iter, RRSets S) throws IOException {
         ArrayList<Double> coverage = new ArrayList<>();
         for (int budget : budgets) {
+            String path;
             double influence = 0.;
-            for (int iter = 0; iter < n_iter; iter++) {
-                String path = String.format(this.basePath + "multi_iter/large_graph_ic_imm_sol_eps0.5_num_k_%d_iter_%d.txt", dataset, budget, iter);
-                InputStreamReader in = new InputStreamReader(new FileInputStream(path));
-                BufferedReader bufferedReader = new BufferedReader(in);
-                List<Integer> seeds = new ArrayList<>();
-                String seed;
-                while ((seed = bufferedReader.readLine()) != null) {
-                    seeds.add(Integer.parseInt(seed));
+            if (this.mode.equals("imm")) {
+                for (int iter = 0; iter < n_iter; iter++) {
+                    path = String.format(this.basePath + "multi_iter/large_graph_ic_imm_sol_eps0.5_num_k_%d_iter_%d.txt", dataset, budget, iter);
+                    influence += evaluate(S, path);
                 }
-                influence += evaluation(S, seeds);
+                influence /= n_iter;
+            } else if (this.mode.equals("gcomb")) {
+                path = String.format(this.basePath + "large_graph-result_RL_%s_nbs_0.003", dataset, budget);
+                influence = evaluate(S, path);
             }
-            influence /= n_iter;
             log.info(String.format("Budget %d average Influence: %f, coverage: %f", budget, influence, influence / S.hyperGT.size()));
             coverage.add(influence / S.hyperGT.size());
         }
+
         return coverage;
     }
 
-    public void writeResult(String dataset, List<Double> coverage) throws IOException {
-        String path = String.format(this.basePath + "imm_influence.txt", dataset);
-        FileOutputStream outputStream = new FileOutputStream(new File(path));
-        OutputStreamWriter ows = new OutputStreamWriter(outputStream);
-        for (int i = 0; i < this.budgets.size(); i++) {
-            ows.write(String.format("%d:%f\n", this.budgets.get(i), coverage.get(i)));
+    public double evaluate(RRSets S, String path) throws IOException {
+        InputStreamReader in = new InputStreamReader(new FileInputStream(path));
+        BufferedReader bufferedReader = new BufferedReader(in);
+        List<Integer> seeds = new ArrayList<>();
+        String seed;
+        while ((seed = bufferedReader.readLine()) != null) {
+            seeds.add(Integer.parseInt(seed));
         }
-        ows.flush();
-        ows.close();
+        return evaluate(S, seeds);
+    }
+
+    public void writeResult(String dataset, List<Double> coverage) throws IOException {
+        if (this.mode.equals("imm")) {
+            String path = String.format(this.basePath + "imm_influence.txt", dataset);
+            FileOutputStream outputStream = new FileOutputStream(new File(path));
+            OutputStreamWriter ows = new OutputStreamWriter(outputStream);
+            for (int i = 0; i < this.budgets.size(); i++) {
+                ows.write(String.format("%d:%f\n", this.budgets.get(i), coverage.get(i)));
+            }
+            ows.flush();
+            ows.close();
+        } else if (this.mode.equals("gcomb")) {
+            for (int i = 0; i < this.budgets.size(); i++) {
+                String path = String.format(this.basePath + "large_graph_reward_RL_budget_%s_nbs_0.003", dataset, this.budgets.get(i));
+                FileOutputStream outputStream = new FileOutputStream(new File(path));
+                OutputStreamWriter ows = new OutputStreamWriter(outputStream);
+                ows.write(String.format("%f", coverage.get(i)));
+                ows.flush();
+                ows.close();
+            }
+
+        }
+
+
     }
 }

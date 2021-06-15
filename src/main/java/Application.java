@@ -1,6 +1,7 @@
 import com.cityu.im.GenerateRRSets;
 import com.cityu.im.InfluenceEvaluation;
 
+import java.awt.*;
 import java.io.FileInputStream;
 import java.util.Arrays;
 import java.util.List;
@@ -18,14 +19,24 @@ public class Application {
         properties.load(new FileInputStream(confPath));
         List<Integer> budgets = Arrays.asList(properties.getProperty("budgets").split(" ")).stream().map(Integer::parseInt).collect(Collectors.toList());
         String type = args[0];
+
         int num = 100000;
-        if (args.length > 2) {
-            num = Integer.parseInt(args[2]);
-        }
         if (type.equals("gen")) {
-            GenerateRRSets.generate(args[1], num, properties.getProperty("basePath"));
+            if (args.length > 2) {
+                num = Integer.parseInt(args[2]);
+            }
+            String dataset = args[1];
+            GenerateRRSets.generate(dataset, num, properties.getProperty("basePath"));
         } else if (type.equals("eval")) {
-            InfluenceEvaluation.eval(args[1], num, properties.getProperty("basePath"), budgets);
+            String mode = args[1];
+            if (!mode.equals("gcomb") && !mode.equals("imm")) {
+                throw new Exception("mode must be gcomb/imm");
+            }
+            String dataset = args[2];
+            if (args.length > 3) {
+                num = Integer.parseInt(args[3]);
+            }
+            InfluenceEvaluation.eval(mode, dataset, num, properties.getProperty("basePath"), budgets);
         } else {
             throw new Exception("task type should be gen or eval");
         }
