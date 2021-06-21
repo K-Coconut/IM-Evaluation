@@ -17,10 +17,11 @@ public class Application {
         Properties properties = new Properties();
         String confPath = System.getProperty("user.dir") + "/src/main/resources/conf.properties";
         properties.load(new FileInputStream(confPath));
-        List<Integer> budgets = Arrays.asList(properties.getProperty("budgets").split(" ")).stream().map(Integer::parseInt).collect(Collectors.toList());
+//        List<Integer> budgets = Arrays.asList(properties.getProperty("budgets").split(" ")).stream().map(Integer::parseInt).collect(Collectors.toList());
         String type = args[0];
 
         int num = 100000;
+        int nIter = 1;
         if (type.equals("gen")) {
             if (args.length > 2) {
                 num = Integer.parseInt(args[2]);
@@ -36,7 +37,10 @@ public class Application {
             if (args.length > 3) {
                 num = Integer.parseInt(args[3]);
             }
-            InfluenceEvaluation.eval(mode, dataset, num, properties.getProperty("basePath"), budgets);
+            if (args.length > 4) {
+                nIter = Integer.parseInt(args[4]);
+            }
+            InfluenceEvaluation.eval(mode, dataset, num, nIter, properties.getProperty("basePath"));
         } else {
             throw new Exception("task type should be gen or eval");
         }

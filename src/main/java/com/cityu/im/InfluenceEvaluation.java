@@ -2,11 +2,10 @@ package com.cityu.im;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import java.util.regex.*;
 
 /**
  * @author Ethan
@@ -18,15 +17,41 @@ public class InfluenceEvaluation {
     private List<Integer> budgets;
     private static Logger log = Logger.getLogger(InfluenceEvaluation.class.getName());
 
-    public static void eval(String mode, String dataset, int num, String basePath, List<Integer> budgets) throws IOException {
+    private void setBudgets(String dataset) {
+        File baseDir = new File(String.format(this.basePath, dataset) + "multi_iter/");
+        List<String> files = Arrays.stream(baseDir.listFiles()).map(File::toString).filter(name -> Pattern.matches(".*large_graph_ic_imm_sol_eps0.5_num_k_\\d+_iter_0.txt", name)).collect(Collectors.toList());
+        List<String> results = Arrays.stream(baseDir.listFiles()).map(File::toString).filter(name -> Pattern.matches(".*imm_influence_\\d+.txt", name)).collect(Collectors.toList());
+        Pattern p = Pattern.compile("large_graph_ic_imm_sol_eps0.5_num_k_(\\d+)_iter_0\\.txt");
+        Pattern p2 = Pattern.compile("imm_influence_(\\d+).txt");
+        HashSet<Integer> budgets = new HashSet<>();
+        for (String name : files) {
+            Matcher m = p.matcher(name);
+            if (m.find()) {
+                int budget = Integer.parseInt(m.group(1));
+                budgets.add(budget);
+            }
+        }
+        for (String name : results) {
+            Matcher m = p2.matcher(name);
+            if (m.find()) {
+                int budget = Integer.parseInt(m.group(1));
+                budgets.remove(budget);
+            }
+        }
+
+        this.budgets = new ArrayList<>(budgets);
+
+    }
+
+    public static void eval(String mode, String dataset, int num, int nIter, String basePath) throws IOException {
         InfluenceEvaluation inf = new InfluenceEvaluation();
         inf.mode = mode;
         inf.basePath = basePath;
-        inf.budgets = budgets;
+        inf.setBudgets(dataset);
         log.info(String.format("Loading %s %d RR Sets", dataset, num));
         RRSets rrSets = inf.loadRRSets(dataset, num);
-        log.info("RR Sets Loaded, eval on budges " + Arrays.toString(budgets.toArray()));
-        ArrayList<Double> coverage = inf.evaluate(dataset, 5, rrSets);
+        log.info("RR Sets Loaded, eval on budges " + Arrays.toString(inf.budgets.toArray()));
+        ArrayList<Double> coverage = inf.evaluate(dataset, nIter, rrSets);
         inf.writeResult(dataset, coverage);
     }
 
@@ -66,7 +91,7 @@ public class InfluenceEvaluation {
 
     public ArrayList<Double> evaluate(String dataset, int n_iter, RRSets S) throws IOException {
         ArrayList<Double> coverage = new ArrayList<>();
-        for (int budget : budgets) {
+        for (int budget : this.budgets) {
             String path;
             double influence = 0.;
             if (this.mode.equals("imm")) {
@@ -99,17 +124,13 @@ public class InfluenceEvaluation {
 
     public void writeResult(String dataset, List<Double> coverage) throws IOException {
         if (this.mode.equals("imm")) {
-            String path = String.format(this.basePath + "imm_influence.txt", dataset);
-            FileOutputStream outputStream = new FileOutputStream(new File(path));
-            OutputStreamWriter ows = new OutputStreamWriter(outputStream);
             for (int i = 0; i < this.budgets.size(); i++) {
-                ows.write(String.format("%d:%f\n", this.budgets.get(i), coverage.get(i)));
-            }
-            ows.flush();
-            ows.close();
-        } else if (this.mode.equals("gcomb")) {
-            for (int i = 0; i < this.budgets.size(); i++) {
-                String path = String.format(this.basePath + "large_graph_reward_RL_budget_%s_nbs_0.003", dataset, this.budgets.get(i));
+                String path = "";
+                if (this.mode.equals("gcomb")) {
+                    path = String.format(this.basePath + "large_graph_reward_RL_budget_%s_nbs_0.003", dataset, this.budgets.get(i));
+                } else {
+                    path = String.format(this.basePath + "multi_iter/imm_influence_%d.txt", dataset, this.budgets.get(i));
+                }
                 FileOutputStream outputStream = new FileOutputStream(new File(path));
                 OutputStreamWriter ows = new OutputStreamWriter(outputStream);
                 ows.write(String.format("%f", coverage.get(i)));
