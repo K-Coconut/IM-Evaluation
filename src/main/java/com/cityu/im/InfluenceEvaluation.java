@@ -60,8 +60,8 @@ public class InfluenceEvaluation {
                 }
             }
         }
-
         this.budgets = new ArrayList<>(budgets);
+        log.info(String.format("%s Parsing on budgets: %s", dataset, this.budgets.toString()));
 
     }
 
@@ -145,23 +145,19 @@ public class InfluenceEvaluation {
     }
 
     public void writeResult(String dataset, List<Double> coverage) throws IOException {
-        if (this.mode.equals("imm")) {
-            for (int i = 0; i < this.budgets.size(); i++) {
-                String path = "";
-                if (this.mode.equals("gcomb")) {
-                    path = String.format(this.basePath + "large_graph_reward_RL_budget_%s_nbs_0.003", dataset, this.budgets.get(i));
-                } else {
-                    path = String.format(this.basePath + "multi_iter/imm_influence_%d.txt", dataset, this.budgets.get(i));
-                }
-                FileOutputStream outputStream = new FileOutputStream(new File(path));
-                OutputStreamWriter ows = new OutputStreamWriter(outputStream);
-                ows.write(String.format("%f", coverage.get(i)));
-                ows.flush();
-                ows.close();
+        for (int i = 0; i < this.budgets.size(); i++) {
+            String path = "";
+            if (this.mode.equals("gcomb")) {
+                path = String.format(this.basePath + "large_graph_reward_RL_budget_%s_nbs_0.003", dataset, this.budgets.get(i));
+            } else {
+                path = String.format(this.basePath + "multi_iter/imm_influence_%d.txt", dataset, this.budgets.get(i));
             }
-
+            FileOutputStream outputStream = new FileOutputStream(new File(path));
+            OutputStreamWriter ows = new OutputStreamWriter(outputStream);
+            ows.write(String.format("%f", coverage.get(i)));
+            ows.flush();
+            ows.close();
         }
-
 
     }
 }
