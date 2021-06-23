@@ -18,24 +18,46 @@ public class InfluenceEvaluation {
     private static Logger log = Logger.getLogger(InfluenceEvaluation.class.getName());
 
     private void setBudgets(String dataset) {
-        File baseDir = new File(String.format(this.basePath, dataset) + "multi_iter/");
-        List<String> files = Arrays.stream(baseDir.listFiles()).map(File::toString).filter(name -> Pattern.matches(".*large_graph_ic_imm_sol_eps0.5_num_k_\\d+_iter_0.txt", name)).collect(Collectors.toList());
-        List<String> results = Arrays.stream(baseDir.listFiles()).map(File::toString).filter(name -> Pattern.matches(".*imm_influence_\\d+.txt", name)).collect(Collectors.toList());
-        Pattern p = Pattern.compile("large_graph_ic_imm_sol_eps0.5_num_k_(\\d+)_iter_0\\.txt");
-        Pattern p2 = Pattern.compile("imm_influence_(\\d+).txt");
         HashSet<Integer> budgets = new HashSet<>();
-        for (String name : files) {
-            Matcher m = p.matcher(name);
-            if (m.find()) {
-                int budget = Integer.parseInt(m.group(1));
-                budgets.add(budget);
+        if (this.mode.equals("imm")) {
+            File baseDir = new File(String.format(this.basePath, dataset) + "multi_iter/");
+            List<String> files = Arrays.stream(baseDir.listFiles()).map(File::toString).filter(name -> Pattern.matches(".*large_graph_ic_imm_sol_eps0.5_num_k_\\d+_iter_0.txt", name)).collect(Collectors.toList());
+            List<String> results = Arrays.stream(baseDir.listFiles()).map(File::toString).filter(name -> Pattern.matches(".*imm_influence_\\d+.txt", name)).collect(Collectors.toList());
+            Pattern p = Pattern.compile("large_graph_ic_imm_sol_eps0.5_num_k_(\\d+)_iter_0\\.txt");
+            Pattern p2 = Pattern.compile("imm_influence_(\\d+).txt");
+            for (String name : files) {
+                Matcher m = p.matcher(name);
+                if (m.find()) {
+                    int budget = Integer.parseInt(m.group(1));
+                    budgets.add(budget);
+                }
             }
-        }
-        for (String name : results) {
-            Matcher m = p2.matcher(name);
-            if (m.find()) {
-                int budget = Integer.parseInt(m.group(1));
-                budgets.remove(budget);
+            for (String name : results) {
+                Matcher m = p2.matcher(name);
+                if (m.find()) {
+                    int budget = Integer.parseInt(m.group(1));
+                    budgets.remove(budget);
+                }
+            }
+        } else if (this.mode.equals("gcomb")) {
+            File baseDir = new File(String.format(this.basePath, dataset));
+            List<String> files = Arrays.stream(baseDir.listFiles()).map(File::toString).filter(name -> Pattern.matches(".*large_graph-result_RL_\\d+_nbs_0.003", name)).collect(Collectors.toList());
+            List<String> results = Arrays.stream(baseDir.listFiles()).map(File::toString).filter(name -> Pattern.matches(".*large_graph_reward_RL_budget_\\d+_nbs_0.003", name)).collect(Collectors.toList());
+            Pattern p = Pattern.compile("large_graph-result_RL_(\\d+)_nbs_0.003");
+            Pattern p2 = Pattern.compile("large_graph_reward_RL_budget_(\\d+)_nbs_0.003");
+            for (String name : files) {
+                Matcher m = p.matcher(name);
+                if (m.find()) {
+                    int budget = Integer.parseInt(m.group(1));
+                    budgets.add(budget);
+                }
+            }
+            for (String name : results) {
+                Matcher m = p2.matcher(name);
+                if (m.find()) {
+                    int budget = Integer.parseInt(m.group(1));
+                    budgets.remove(budget);
+                }
             }
         }
 
