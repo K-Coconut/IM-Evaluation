@@ -6,6 +6,7 @@ import java.util.*;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.regex.*;
+import java.util.stream.Stream;
 
 /**
  * @author Ethan
@@ -55,7 +56,7 @@ public class InfluenceEvaluation {
                 budgets.remove(budget);
             }
         }
-        this.budgets = new ArrayList<>(budgets);
+        this.budgets =  budgets.stream().sorted().collect(Collectors.toList());
         log.info(String.format("%s Parsing on budgets: %s", dataset, this.budgets.toString()));
 
     }
