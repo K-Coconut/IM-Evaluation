@@ -22,14 +22,20 @@ public class InfluenceEvaluation {
         HashSet<Integer> budgets = new HashSet<>();
         List<String> files = new ArrayList<>(), results = new ArrayList<>();
         Pattern p = null, p2 = null;
-        if (this.mode.equals("imm")) {
-            File baseDir = new File(String.format(this.basePath, dataset) + "multi_iter/");
+        if (this.mode.equals("imm") || this.mode.equals("interp_imm")) {
+            File baseDir = null;
+            if (this.mode.equals("imm")) {
+                baseDir = new File(String.format(this.basePath, dataset) + "multi_iter/");
+            } else {
+                baseDir = new File(String.format(this.basePath, dataset) + "interp/multi_iter/");
+            }
             files = Arrays.stream(baseDir.listFiles()).map(File::toString).filter(name -> Pattern.matches(".*large_graph_ic_imm_sol_eps0.5_num_k_\\d+_iter_0.txt", name)).collect(Collectors.toList());
             results = Arrays.stream(baseDir.listFiles()).map(File::toString).filter(name -> Pattern.matches(".*imm_influence_\\d+.txt", name)).collect(Collectors.toList());
             p = Pattern.compile("large_graph_ic_imm_sol_eps0.5_num_k_(\\d+)_iter_0\\.txt");
             p2 = Pattern.compile("imm_influence_(\\d+).txt");
 
-        } else if (this.mode.equals("gcomb")) {
+        }
+        else if (this.mode.equals("gcomb")) {
             File baseDir = new File(String.format(this.basePath, dataset));
             files = Arrays.stream(baseDir.listFiles()).map(File::toString).filter(name -> Pattern.matches(".*large_graph-result_RL_\\d+_nbs_0.003", name)).collect(Collectors.toList());
             results = Arrays.stream(baseDir.listFiles()).map(File::toString).filter(name -> Pattern.matches(".*large_graph_reward_RL_budget_\\d+_nbs_0.003", name)).collect(Collectors.toList());
@@ -112,9 +118,13 @@ public class InfluenceEvaluation {
         for (int budget : this.budgets) {
             String path;
             double influence = 0.;
-            if (this.mode.equals("imm")) {
+            if (this.mode.equals("imm") || this.mode.equals("interp_imm")) {
                 for (int iter = 0; iter < n_iter; iter++) {
-                    path = String.format(this.basePath + "multi_iter/large_graph_ic_imm_sol_eps0.5_num_k_%d_iter_%d.txt", dataset, budget, iter);
+                    if (this.mode.equals("imm")) {
+                        path = String.format(this.basePath + "multi_iter/large_graph_ic_imm_sol_eps0.5_num_k_%d_iter_%d.txt", dataset, budget, iter);
+                    } else {
+                        path = String.format(this.basePath + "interp/multi_iter/large_graph_ic_imm_sol_eps0.5_num_k_%d_iter_%d.txt", dataset, budget, iter);
+                    }
                     influence += evaluate(S, path);
                 }
                 influence /= n_iter;
@@ -136,7 +146,7 @@ public class InfluenceEvaluation {
         InputStreamReader in = new InputStreamReader(new FileInputStream(path));
         BufferedReader bufferedReader = new BufferedReader(in);
         List<Integer> seeds = new ArrayList<>();
-        if (this.mode.equals("gcomb") || this.mode.equals("imm")) {
+        if (this.mode.equals("gcomb") || this.mode.equals("imm") || this.mode.equals("interp_imm")) {
             String seed;
             while ((seed = bufferedReader.readLine()) != null) {
                 seeds.add(Integer.parseInt(seed));
@@ -157,7 +167,10 @@ public class InfluenceEvaluation {
                 path = String.format(this.basePath + "large_graph_reward_RL_budget_%s_nbs_0.003", dataset, this.budgets.get(i));
             } else if (this.mode.equals("imm")){
                 path = String.format(this.basePath + "multi_iter/imm_influence_%d.txt", dataset, this.budgets.get(i));
-            } else {
+            } else if (this.mode.equals("interp_imm")) {
+                path = String.format(this.basePath + "interp/multi_iter/imm_influence_%d.txt", dataset, this.budgets.get(i));
+            }
+            else {
                 path = String.format(this.basePath + "%s_reward_%d.txt", dataset, this.mode, this.budgets.get(i));
             }
             FileOutputStream outputStream = new FileOutputStream(new File(path));
