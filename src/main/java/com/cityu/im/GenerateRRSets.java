@@ -42,7 +42,7 @@ public class GenerateRRSets {
         for (int i = 1; i < num + 1; i++) {
             int source = (int) (Math.random() * graph.n);
             this.graph.generateRRSet(source, S);
-            if (i % 10000 == 0) {
+            if (i % 1000 == 0) {
                 log.info(String.format("[%d/%d] RR sets generated, Memory: %.2f M", i, num, (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory())/1024/1024.));
             }
         }
