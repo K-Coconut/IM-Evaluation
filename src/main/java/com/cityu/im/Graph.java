@@ -75,6 +75,34 @@ public class Graph {
         }
     }
 
+    public List<Integer> lowMemoryGenerateRRSet(int source) {
+        List<Integer> activeNodes = new ArrayList<>(Arrays.asList(source)), seeds = new ArrayList<>(Arrays.asList(source)), visitedNodes = new ArrayList<>(Arrays.asList(source));
+
+        this.visited[source] = true;
+        while (!seeds.isEmpty()) {
+            List<Integer> newSeeds = new ArrayList<>();
+            for (int seed : seeds) {
+                for (int neighbor : this.nodes.get(seed).keySet()) {
+                    if (this.visited[neighbor]) {
+                        continue;
+                    }
+                    if (Math.random() < this.nodes.get(seed).get(neighbor)) {
+                        this.visited[neighbor] = true;
+                        visitedNodes.add(neighbor);
+                        activeNodes.add(neighbor);
+                        newSeeds.add(neighbor);
+                    }
+                }
+            }
+            seeds = newSeeds;
+        }
+        // reset
+        for (int node : visitedNodes) {
+            this.visited[node] = false;
+        }
+        return activeNodes;
+    }
+
     public void buildRRIndex(RRSets S) {
         int rrId = 0;
         for (List<Integer> set : S.hyperGT) {
