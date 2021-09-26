@@ -13,7 +13,7 @@ import java.util.logging.Logger;
  */
 public class GenerateRRSets {
     public Graph graph = new Graph();
-    private String basePath = "";
+    public String basePath = "";
     private static Logger log = Logger.getLogger(GenerateRRSets.class.getName());
 
     public static void generate(String dataset, int num, String basePath) throws IOException {
@@ -24,7 +24,7 @@ public class GenerateRRSets {
         log.info(String.format("Graph loaded, n=%d, m=%d", inf.graph.n, inf.graph.m));
         log.info(String.format("To Generate %d RR Sets", num));
         Long st = System.currentTimeMillis();
-        inf.lowMemoryGenerateRRSets(dataset, num);
+        inf.generateRRSets(num);
         Long ed = System.currentTimeMillis();
         log.info(String.format("%d RR Sets generated, takes %fs", num, (ed - st) / 1000.));
     }
@@ -37,7 +37,7 @@ public class GenerateRRSets {
     public RRSets generateRRSets(int num) {
         RRSets S = new RRSets();
         for (int i = 1; i < num + 1; i++) {
-            int source = (int) (Math.random() * graph.n);
+            int source = (int) (Math.random() * this.graph.n);
             this.graph.generateRRSet(source, S);
             if (i % 1000 == 0) {
                 log.info(String.format("[%d/%d] RR sets generated, Memory: %.2f M = %.3f G", i, num, (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / 1024 / 1024., (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / 1024 / 1024. / 1024.));

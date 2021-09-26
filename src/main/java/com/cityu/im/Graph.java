@@ -2,6 +2,7 @@ package com.cityu.im;
 
 import java.io.*;
 import java.util.*;
+import java.util.logging.Logger;
 
 /**
  * @author Ethan
@@ -13,6 +14,7 @@ public class Graph {
     public Integer m;
     public boolean[] visited;
     public int[] degree;
+    private static Logger log = Logger.getLogger(GenerateRRSets.class.getName());
 
     private void readAttri(String path) throws IOException {
         BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(new FileInputStream(new File(path))));
@@ -28,7 +30,13 @@ public class Graph {
             InputStreamReader read = new InputStreamReader(new FileInputStream(file));
             BufferedReader bufferedReader = new BufferedReader(read);
             String lineText = null;
+            int cnt = 1;
+            int print_every = this.m / 10;
             while ((lineText = bufferedReader.readLine()) != null) {
+                if (cnt % print_every == 0) {
+                    log.info(String.format("Reading Graph: %d/%d [%.2f]%%", cnt, this.m, (100.0 * cnt) /  this.m));
+                }
+                cnt ++;
                 if (lineText.startsWith("#")) continue;
                 String[] split = lineText.strip().replace('\t', ' ').split(" ");
                 if (split.length < 3) break;

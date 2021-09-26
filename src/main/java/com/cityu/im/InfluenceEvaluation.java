@@ -69,11 +69,20 @@ public class InfluenceEvaluation {
 
     public static void eval(String mode, String dataset, int num, int nIter, String basePath) throws IOException {
         InfluenceEvaluation inf = new InfluenceEvaluation();
+        GenerateRRSets genRR = new GenerateRRSets();
+        genRR.basePath = basePath;
+        genRR.readData(dataset);
         inf.mode = mode;
         inf.basePath = basePath;
         inf.setBudgets(dataset);
-        log.info(String.format("Loading %s %d RR Sets", dataset, num));
-        RRSets rrSets = inf.loadRRSets(dataset, num);
+        if (inf.budgets.size() == 0) {
+            return;
+        }
+        log.info(String.format("Generating %s %d RR Sets", dataset, num));
+        Long st = System.currentTimeMillis();
+        RRSets rrSets = genRR.generateRRSets(num);
+        Long ed = System.currentTimeMillis();
+        log.info(String.format("%d RR Sets generated, takes %fs", num, (ed - st) / 1000.));
         log.info("RR Sets Loaded, eval on budges " + Arrays.toString(inf.budgets.toArray()));
         ArrayList<Double> coverage = inf.evaluate(dataset, nIter, rrSets);
         inf.writeResult(dataset, coverage);
