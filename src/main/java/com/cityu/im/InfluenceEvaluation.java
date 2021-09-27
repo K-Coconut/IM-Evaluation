@@ -101,7 +101,7 @@ public class InfluenceEvaluation {
         while ((text = bufferedReader.readLine()) != null) {
             String[] split = text.split(":");
             List<Integer> rr = Arrays.asList(split[1].substring(1, split[1].length() - 1).split(", ")).stream().map(Integer::parseInt).collect(Collectors.toList());
-            S.hyperG.put(Integer.parseInt(split[0]), rr);
+            S.hyperG.add(Integer.parseInt(split[0]), rr);
         }
         bufferedReader.close();
         return S;
@@ -112,7 +112,7 @@ public class InfluenceEvaluation {
         boolean[] visitedRR = new boolean[S.hyperGT.size()];
 
         for (int seed : seeds) {
-            for (int rrId : S.hyperG.getOrDefault(seed, new ArrayList<>())) {
+            for (int rrId : S.hyperG.get(seed)) {
                 if (!visitedRR[rrId]) {
                     cover += 1;
                     visitedRR[rrId] = true;

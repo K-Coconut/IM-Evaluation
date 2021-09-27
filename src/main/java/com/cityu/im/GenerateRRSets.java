@@ -93,8 +93,9 @@ public class GenerateRRSets {
             osw.write(rr.toString() + "\n");
         }
         osw.write("\n");
-        for (Map.Entry<Integer, List<Integer>> set : S.hyperG.entrySet()) {
-            osw.write(set.getKey() + ":" + set.getValue().toString() + "\n");
+        int id = 1;
+        for (List<Integer> set : S.hyperG) {
+            osw.write( String.valueOf(id) + ":" + set.toString() + "\n");
         }
         osw.flush();
         osw.close();

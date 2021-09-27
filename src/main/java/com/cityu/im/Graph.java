@@ -112,10 +112,12 @@ public class Graph {
     }
 
     public void buildRRIndex(RRSets S) {
+        for (int i=0; i<this.n + 1; i++) {
+            S.hyperG.add(new ArrayList<>());
+        }
         int rrId = 0;
         for (List<Integer> set : S.hyperGT) {
             for (int node : set) {
-                S.hyperG.putIfAbsent(node, new ArrayList<>());
                 S.hyperG.get(node).add(rrId);
             }
             rrId += 1;
@@ -125,10 +127,10 @@ public class Graph {
 
 class RRSets implements Serializable {
     public List<List<Integer>> hyperGT;
-    public HashMap<Integer, List<Integer>> hyperG;
+    public List<List<Integer>> hyperG;
 
     public RRSets() {
         this.hyperGT = new ArrayList<>();
-        this.hyperG = new HashMap<>();
+        this.hyperG = new ArrayList<>();
     }
 }
