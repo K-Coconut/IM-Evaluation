@@ -85,12 +85,10 @@ public class Graph {
     }
 
     public void buildRRIndex(RRSets S) {
-        for (int i=0; i<this.n + 1; i++) {
-            S.hyperG.add(new ArrayList<>());
-        }
         int rrId = 0;
         for (List<Integer> set : S.hyperGT) {
             for (int node : set) {
+                S.hyperG.putIfAbsent(node, new ArrayList<>());
                 S.hyperG.get(node).add(rrId);
             }
             rrId += 1;
@@ -100,18 +98,17 @@ public class Graph {
 
 class RRSets {
     public ArrayList<ArrayList<Integer>> hyperGT;
-    public ArrayList<ArrayList<Integer>> hyperG;
+    public HashMap<Integer, ArrayList<Integer>> hyperG;
 
     public RRSets() {
         this.hyperGT = new ArrayList<>();
-        this.hyperG = new ArrayList<>();
+        this.hyperG = new HashMap<>();
     }
 
     public void trim() {
-        for (ArrayList<Integer> list : hyperG) {
-            list.trimToSize();
+        for (Map.Entry<Integer, ArrayList<Integer>> set : hyperG.entrySet()) {
+            set.getValue().trimToSize();
         }
         this.hyperGT.trimToSize();
-        this.hyperG.trimToSize();
     }
 }
