@@ -67,12 +67,13 @@ public class Graph {
             int seed = activeNodes.get(front);
             front++;
 
-            for (int neighbor : this.nodes.get(seed).keySet()) {
+            for (Map.Entry<Integer, Float> pair : this.nodes.get(seed).entrySet()) {
+                int neighbor = pair.getKey();
+                float probability = pair.getValue();
                 if (visitedNodes.contains(neighbor)) {
                     continue;
                 }
-                if (Math.random() < this.nodes.get(seed).get(neighbor)) {
-                    this.visited[neighbor] = true;
+                if (Math.random() < probability) {
                     activeNodes.add(neighbor);
                     visitedNodes.add(neighbor);
                     rear++;
