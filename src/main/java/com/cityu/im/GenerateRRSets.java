@@ -44,62 +44,7 @@ public class GenerateRRSets {
             }
         }
         this.graph.buildRRIndex(S);
+        S.trim();
         return S;
     }
-
-    public void lowMemoryGenerateRRSets(String dataset, int num) throws IOException {
-        String dirPath = String.format(this.basePath, dataset) + "/large_graph/mc_RR_Sets/";
-        boolean mkdirs = new File(dirPath).mkdirs();
-        if (mkdirs) System.out.printf("Create Directory: %s", dirPath);
-        String file = dirPath + String.format("RR%d", num);
-        FileOutputStream fileOut = new FileOutputStream(new File(file));
-        OutputStreamWriter osw = new OutputStreamWriter(fileOut, StandardCharsets.UTF_8);
-
-        int rrId = 0;
-        HashMap<Integer, List<Integer>> hyperG = new HashMap<>();
-        for (int i = 1; i < num + 1; i++) {
-            int source = (int) (Math.random() * graph.n);
-            List<Integer> rr = this.graph.lowMemoryGenerateRRSet(source);
-            osw.write(rr.toString() + "\n");
-
-            for (int node : rr) {
-                hyperG.putIfAbsent(node, new ArrayList<>());
-                hyperG.get(node).add(rrId);
-            }
-            rrId += 1;
-
-            if (i % 1000 == 0) {
-                log.info(String.format("[%d/%d] RR sets generated, Memory: %.2f M = %.3f G", i, num, (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / 1024 / 1024., (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / 1024 / 1024. / 1024.));
-            }
-        }
-
-        osw.write("\n");
-        for (Map.Entry<Integer, List<Integer>> set : hyperG.entrySet()) {
-            osw.write(set.getKey() + ":" + set.getValue().toString() + "\n");
-        }
-        osw.flush();
-        osw.close();
-        log.info(String.format("RRSets dumped to %s", file));
-    }
-
-    public void dumpRRSets(RRSets S, String dataset, int num) throws IOException {
-        String dirPath = String.format(this.basePath, dataset) + "/large_graph/mc_RR_Sets/";
-        boolean mkdirs = new File(dirPath).mkdirs();
-        if (mkdirs) System.out.printf("Create Directory: %s", dirPath);
-        String file = dirPath + String.format("RR%d", num);
-        FileOutputStream fileOut = new FileOutputStream(new File(file));
-        OutputStreamWriter osw = new OutputStreamWriter(fileOut, StandardCharsets.UTF_8);
-        for (List<Integer> rr : S.hyperGT) {
-            osw.write(rr.toString() + "\n");
-        }
-        osw.write("\n");
-        int id = 1;
-        for (List<Integer> set : S.hyperG) {
-            osw.write( String.valueOf(id) + ":" + set.toString() + "\n");
-        }
-        osw.flush();
-        osw.close();
-        log.info(String.format("RRSets dumped to %s", file));
-    }
-
 }

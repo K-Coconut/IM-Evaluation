@@ -69,15 +69,17 @@ public class InfluenceEvaluation {
 
     public static void eval(String mode, String dataset, int num, int nIter, String basePath) throws IOException {
         InfluenceEvaluation inf = new InfluenceEvaluation();
-        GenerateRRSets genRR = new GenerateRRSets();
-        genRR.basePath = basePath;
-        genRR.readData(dataset);
         inf.mode = mode;
         inf.basePath = basePath;
         inf.setBudgets(dataset);
         if (inf.budgets.size() == 0) {
             return;
         }
+
+        GenerateRRSets genRR = new GenerateRRSets();
+        genRR.basePath = basePath;
+        genRR.readData(dataset);
+        log.info(String.format("Graph loaded, size: %.2f G", (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / 1024 / 1024. / 1024.));
         log.info(String.format("Generating %s %d RR Sets", dataset, num));
         Long st = System.currentTimeMillis();
         RRSets rrSets = genRR.generateRRSets(num);
@@ -86,25 +88,6 @@ public class InfluenceEvaluation {
         log.info("RR Sets Loaded, eval on budges " + Arrays.toString(inf.budgets.toArray()));
         ArrayList<Double> coverage = inf.evaluate(dataset, nIter, rrSets);
         inf.writeResult(dataset, coverage);
-    }
-
-    public RRSets loadRRSets(String dataset, int num) throws IOException {
-        String filePath = String.format(basePath + "/large_graph/mc_RR_Sets/RR%d", dataset, num);
-        InputStreamReader in = new InputStreamReader(new FileInputStream(filePath), StandardCharsets.UTF_8);
-        BufferedReader bufferedReader = new BufferedReader(in);
-        RRSets S = new RRSets();
-        String text = null;
-        while ((text = bufferedReader.readLine()) != null && !text.equals("")) {
-            List<Integer> rr = Arrays.asList(text.substring(1, text.length() - 1).split(", ")).stream().map(Integer::parseInt).collect(Collectors.toList());
-            S.hyperGT.add(rr);
-        }
-        while ((text = bufferedReader.readLine()) != null) {
-            String[] split = text.split(":");
-            List<Integer> rr = Arrays.asList(split[1].substring(1, split[1].length() - 1).split(", ")).stream().map(Integer::parseInt).collect(Collectors.toList());
-            S.hyperG.add(Integer.parseInt(split[0]), rr);
-        }
-        bufferedReader.close();
-        return S;
     }
 
     public double evaluate(RRSets S, List<Integer> seeds) {
