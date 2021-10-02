@@ -95,7 +95,7 @@ public class InfluenceEvaluation {
         boolean[] visitedRR = new boolean[S.hyperGT.size()];
 
         for (int seed : seeds) {
-            for (int rrId : S.hyperG.get(seed)) {
+            for (int rrId : S.hyperG.getOrDefault(seed, new ArrayList<>())) {
                 if (!visitedRR[rrId]) {
                     cover += 1;
                     visitedRR[rrId] = true;
