@@ -40,7 +40,7 @@ public class GenerateRRSets {
                 log.info(String.format("[%d/%d] RR sets generated, Memory: %.2f M = %.3f G", i, num, (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / 1024 / 1024., (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / 1024 / 1024. / 1024.));
             }
         }
-        this.graph.buildRRIndex(S);
+//        this.graph.buildRRIndex(S);
         S.trim();
         return S;
     }

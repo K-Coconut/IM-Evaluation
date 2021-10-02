@@ -82,6 +82,11 @@ public class Graph {
         }
         activeNodes.trimToSize();
         S.hyperGT.add(activeNodes);
+
+        for (int node : activeNodes) {
+            S.hyperG.putIfAbsent(node, new ArrayList<>());
+            S.hyperG.get(node).add(S.hyperGT.size() - 1);
+        }
     }
 
     public void buildRRIndex(RRSets S) {
