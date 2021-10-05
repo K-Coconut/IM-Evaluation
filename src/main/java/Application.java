@@ -30,7 +30,7 @@ public class Application {
             GenerateRRSets.generate(dataset, num, properties.getProperty("basePath"));
         } else if (type.equals("eval")) {
             String mode = args[1];
-            if (!mode.equals("gcomb") && !mode.equals("imm") && !mode.equals("DDiscount") && !mode.equals("SingleDiscount") && !mode.equals("interp_imm")) {
+            if (!mode.equals("gcomb") && !mode.equals("gcomb_epoch") && !mode.equals("imm") && !mode.equals("DDiscount") && !mode.equals("SingleDiscount") && !mode.equals("interp_imm")) {
                 throw new Exception("mode must be gcomb/imm");
             }
             String dataset = args[2];

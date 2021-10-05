@@ -15,7 +15,8 @@ import java.util.stream.Stream;
 public class InfluenceEvaluation {
     private String basePath = "";
     private String mode;
-    private List<Integer> budgets;
+    private List<Integer> budgets = new ArrayList<>();
+    private HashMap<String, ArrayList<String>> budgetsWithEpochs = new HashMap<>();
     private static Logger log = Logger.getLogger(InfluenceEvaluation.class.getName());
 
     private void setBudgets(String dataset) {
@@ -47,6 +48,24 @@ public class InfluenceEvaluation {
             results = Arrays.stream(baseDir.listFiles()).map(File::toString).filter(name -> Pattern.matches(String.format(".*%s_reward_\\d.*", this.mode), name)).collect(Collectors.toList());
             p = Pattern.compile(String.format(".*%s_budget_(\\d+).*", this.mode));
             p2 = Pattern.compile(String.format(".*%s_reward_(\\d+).*", this.mode));
+        } else if (this.mode.equals("gcomb_epoch")) {
+            File baseDir = new File(String.format(this.basePath, dataset));
+            files = Arrays.stream(baseDir.listFiles()).map(File::toString).filter(name -> Pattern.matches(".*large_graph_epoch_\\d+-result_RL_\\d+_nbs_0.003", name)).collect(Collectors.toList());
+            p = Pattern.compile("large_graph_epoch_(\\d+)-result_RL_(\\d+)_nbs_0.003");
+            for (String file : files) {
+                Matcher matcher = p.matcher(file);
+                if (!matcher.find()) continue;
+                String epoch = matcher.group(1);
+                String budget = matcher.group(2);
+                if (new File(String.format(this.basePath + "large_graph_epoch_%s_reward_RL_budget_%s_nbs_0.003", dataset, epoch, budget)).exists()) {
+                    continue;
+                }
+                this.budgetsWithEpochs.putIfAbsent(budget, new ArrayList<>());
+                this.budgetsWithEpochs.get(budget).add(epoch);
+            }
+            log.info(String.format("%s Parsing on budgets & epochs: %s", dataset, this.budgetsWithEpochs.toString()));
+            return;
+
         }
         for (String name : files) {
             Matcher m = p.matcher(name);
@@ -72,7 +91,8 @@ public class InfluenceEvaluation {
         inf.mode = mode;
         inf.basePath = basePath;
         inf.setBudgets(dataset);
-        if (inf.budgets.size() == 0) {
+        if (inf.budgets.size() == 0 && inf.budgetsWithEpochs.size() == 0) {
+            log.info("Nothing to process");
             return;
         }
 
@@ -80,14 +100,45 @@ public class InfluenceEvaluation {
         genRR.basePath = basePath;
         genRR.readData(dataset);
         log.info(String.format("Graph loaded, size: %.2f G", (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / 1024 / 1024. / 1024.));
-        log.info(String.format("Generating %s %d RR Sets", dataset, num));
-        Long st = System.currentTimeMillis();
-        RRSets rrSets = genRR.generateRRSets(num);
-        Long ed = System.currentTimeMillis();
-        log.info(String.format("%d RR Sets generated, takes %fs", num, (ed - st) / 1000.));
-        log.info("RR Sets Loaded, eval on budges " + Arrays.toString(inf.budgets.toArray()));
+        RRSets rrSets = null;
+        boolean gen = !dataset.equals("youtube");
+        if (gen) {
+            log.info(String.format("Generating %s %d RR Sets", dataset, num));
+            Long st = System.currentTimeMillis();
+            rrSets = genRR.generateRRSets(num);
+            Long ed = System.currentTimeMillis();
+            log.info(String.format("%d RR Sets generated, takes %fs", num, (ed - st) / 1000.));
+            log.info("RR Sets Loaded, eval on budges " + Arrays.toString(inf.budgets.toArray()));
+        } else {
+            log.info(String.format("Loading %s %d RR Sets", dataset, num));
+            Long st = System.currentTimeMillis();
+            rrSets = inf.loadRRSets(dataset, num);
+            Long ed = System.currentTimeMillis();
+            log.info(String.format("%d RR Sets loaded, takes %fs", num, (ed - st) / 1000.));
+        }
         ArrayList<Double> coverage = inf.evaluate(dataset, nIter, rrSets);
         inf.writeResult(dataset, coverage);
+    }
+
+    public RRSets loadRRSets(String dataset, int num) throws IOException {
+        String filePath = String.format(basePath + "/large_graph/mc_RR_Sets/RR%d", dataset, num);
+        InputStreamReader in = new InputStreamReader(new FileInputStream(filePath), StandardCharsets.UTF_8);
+        BufferedReader bufferedReader = new BufferedReader(in);
+        RRSets S = new RRSets();
+        String text = null;
+        while ((text = bufferedReader.readLine()) != null && !text.equals("")) {
+            ArrayList<Integer> rr = (ArrayList<Integer>) Arrays.asList(text.substring(1, text.length() - 1).split(", ")).stream().map(Integer::parseInt).collect(Collectors.toList());
+            rr.trimToSize();
+            S.hyperGT.add(rr);
+        }
+        while ((text = bufferedReader.readLine()) != null) {
+            String[] split = text.split(":");
+            ArrayList<Integer> rr = (ArrayList<Integer>) Arrays.asList(split[1].substring(1, split[1].length() - 1).split(", ")).stream().map(Integer::parseInt).collect(Collectors.toList());
+            rr.trimToSize();
+            S.hyperG.put(Integer.parseInt(split[0]), rr);
+        }
+        bufferedReader.close();
+        return S;
     }
 
     public double evaluate(RRSets S, List<Integer> seeds) {
@@ -106,7 +157,27 @@ public class InfluenceEvaluation {
     }
 
     public ArrayList<Double> evaluate(String dataset, int n_iter, RRSets S) throws IOException {
-        ArrayList<Double> coverage = new ArrayList<>();
+        ArrayList<Double> coverageList = new ArrayList<>();
+
+        // special case
+        if (this.mode.equals("gcomb_epoch")) {
+            for (Map.Entry<String, ArrayList<String>> entry : this.budgetsWithEpochs.entrySet()) {
+                String budget = entry.getKey();
+                for (String epoch : entry.getValue()) {
+                    String path = String.format(this.basePath + "large_graph_epoch_%s-result_RL_%s_nbs_0.003", dataset, epoch, budget);
+                    double influence = evaluate(S, path);
+                    String resultPath = String.format(this.basePath + "large_graph_epoch_%s_reward_RL_budget_%s_nbs_0.003", dataset, epoch, budget);
+                    FileOutputStream out = new FileOutputStream(resultPath);
+                    OutputStreamWriter ows = new OutputStreamWriter(out);
+                    double coverage = influence / S.hyperGT.size();
+                    ows.write(String.format("%f", coverage));
+                    ows.flush();
+                    ows.close();
+                    log.info(String.format("Processing budget %s epoch %s, coverage: %f", budget, epoch, coverage));
+                }
+            }
+        }
+
         for (int budget : this.budgets) {
             String path;
             double influence = 0.;
@@ -128,17 +199,17 @@ public class InfluenceEvaluation {
                 influence = evaluate(S, path);
             }
             log.info(String.format("Budget %d average Influence: %f, coverage: %f", budget, influence, influence / S.hyperGT.size()));
-            coverage.add(influence / S.hyperGT.size());
+            coverageList.add(influence / S.hyperGT.size());
         }
 
-        return coverage;
+        return coverageList;
     }
 
     public double evaluate(RRSets S, String path) throws IOException {
         InputStreamReader in = new InputStreamReader(new FileInputStream(path));
         BufferedReader bufferedReader = new BufferedReader(in);
         List<Integer> seeds = new ArrayList<>();
-        if (this.mode.equals("gcomb") || this.mode.equals("imm") || this.mode.equals("interp_imm")) {
+        if (this.mode.equals("gcomb") || this.mode.equals("gcomb_epoch") || this.mode.equals("imm") || this.mode.equals("interp_imm")) {
             String seed;
             while ((seed = bufferedReader.readLine()) != null) {
                 seeds.add(Integer.parseInt(seed));
