@@ -23,12 +23,14 @@ public class InfluenceEvaluation {
         HashSet<Integer> budgets = new HashSet<>();
         List<String> files = new ArrayList<>(), results = new ArrayList<>();
         Pattern p = null, p2 = null;
-        if (this.mode.equals("imm") || this.mode.equals("interp_imm")) {
+        if (this.mode.equals("imm") || this.mode.equals("interp_imm") || this.mode.equals("imm_dense")) {
             File baseDir = null;
             if (this.mode.equals("imm")) {
                 baseDir = new File(String.format(this.basePath, dataset) + "multi_iter/");
-            } else {
+            } else if (this.mode.equals("interp_imm")){
                 baseDir = new File(String.format(this.basePath, dataset) + "interp/multi_iter/");
+            } else {
+                baseDir = new File(String.format(this.basePath, dataset) + "multi_iter/dense/");
             }
             files = Arrays.stream(baseDir.listFiles()).map(File::toString).filter(name -> Pattern.matches(".*large_graph_ic_imm_sol_eps0.5_num_k_\\d+_iter_0.txt", name)).collect(Collectors.toList());
             results = Arrays.stream(baseDir.listFiles()).map(File::toString).filter(name -> Pattern.matches(".*imm_influence_\\d+.txt", name)).collect(Collectors.toList());
@@ -204,12 +206,14 @@ public class InfluenceEvaluation {
         for (int budget : this.budgets) {
             String path;
             double influence = 0.;
-            if (this.mode.equals("imm") || this.mode.equals("interp_imm")) {
+            if (this.mode.equals("imm") || this.mode.equals("interp_imm") || this.mode.equals("imm_dense")) {
                 for (int iter = 0; iter < n_iter; iter++) {
                     if (this.mode.equals("imm")) {
                         path = String.format(this.basePath + "multi_iter/large_graph_ic_imm_sol_eps0.5_num_k_%d_iter_%d.txt", dataset, budget, iter);
-                    } else {
+                    } else if (this.mode.equals("inteerp_imm")){
                         path = String.format(this.basePath + "interp/multi_iter/large_graph_ic_imm_sol_eps0.5_num_k_%d_iter_%d.txt", dataset, budget, iter);
+                    } else {
+                        path = String.format(this.basePath + "/multi_iter/dense/large_graph_ic_imm_sol_eps0.5_num_k_%d_iter_%d.txt", dataset, budget, iter);
                     }
                     influence += evaluate(S, path);
                 }
@@ -232,7 +236,8 @@ public class InfluenceEvaluation {
         InputStreamReader in = new InputStreamReader(new FileInputStream(path));
         BufferedReader bufferedReader = new BufferedReader(in);
         List<Integer> seeds = new ArrayList<>();
-        if (this.mode.equals("gcomb") || this.mode.equals("gcomb_epoch") || this.mode.equals("gnn_greedy") || this.mode.equals("imm") || this.mode.equals("interp_imm")) {
+        if (this.mode.equals("gcomb") || this.mode.equals("gcomb_epoch") || this.mode.equals("gnn_greedy") ||
+                this.mode.equals("imm") || this.mode.equals("interp_imm") || this.mode.equals("imm_dense")) {
             String seed;
             while ((seed = bufferedReader.readLine()) != null) {
                 seeds.add(Integer.parseInt(seed));
@@ -255,6 +260,8 @@ public class InfluenceEvaluation {
                 path = String.format(this.basePath + "multi_iter/imm_influence_%d.txt", dataset, this.budgets.get(i));
             } else if (this.mode.equals("interp_imm")) {
                 path = String.format(this.basePath + "interp/multi_iter/imm_influence_%d.txt", dataset, this.budgets.get(i));
+            } else if (this.mode.equals("imm_dense")) {
+                path = String.format(this.basePath + "/multi_iter/dense/imm_influence_%d.txt", dataset, this.budgets.get(i));
             }
             else {
                 path = String.format(this.basePath + "%s_reward_%d.txt", dataset, this.mode, this.budgets.get(i));
