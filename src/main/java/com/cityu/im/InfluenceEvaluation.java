@@ -66,6 +66,23 @@ public class InfluenceEvaluation {
             log.info(String.format("%s Parsing on budgets & epochs: %s", dataset, this.budgetsWithEpochs.toString()));
             return;
 
+        } else if (this.mode.equals("gnn_greedy")) {
+            File baseDir = new File(String.format(this.basePath + "/gnn_greedy/", dataset));
+            files = Arrays.stream(baseDir.listFiles()).map(File::toString).filter(name -> Pattern.matches(".*budget\\d+_epoch\\d+_seeds.txt", name)).collect(Collectors.toList());
+            p = Pattern.compile("budget(\\d+)_epoch(\\d+)_seeds.txt");
+            for (String file : files) {
+                Matcher matcher = p.matcher(file);
+                if (!matcher.find()) continue;
+                String epoch = matcher.group(1);
+                String budget = matcher.group(2);
+                if (new File(String.format(this.basePath  + "gnn_greedy/budget%s_epoch%s_reward.txt", dataset, epoch, budget)).exists()) {
+                    continue;
+                }
+                this.budgetsWithEpochs.putIfAbsent(budget, new ArrayList<>());
+                this.budgetsWithEpochs.get(budget).add(epoch);
+            }
+            log.info(String.format("%s Parsing on budgets & epochs: %s", dataset, this.budgetsWithEpochs.toString()));
+            return;
         }
         for (String name : files) {
             Matcher m = p.matcher(name);
@@ -160,13 +177,19 @@ public class InfluenceEvaluation {
         ArrayList<Double> coverageList = new ArrayList<>();
 
         // special case
-        if (this.mode.equals("gcomb_epoch")) {
+        if (this.mode.equals("gcomb_epoch") || this.mode.equals("gnn_greedy")) {
             for (Map.Entry<String, ArrayList<String>> entry : this.budgetsWithEpochs.entrySet()) {
                 String budget = entry.getKey();
                 for (String epoch : entry.getValue()) {
-                    String path = String.format(this.basePath + "large_graph_epoch_%s-result_RL_%s_nbs_0.003", dataset, epoch, budget);
+                    String path, resultPath;
+                    if (this.mode.equals("gcomb_epoch")) {
+                        path = String.format(this.basePath + "large_graph_epoch_%s-result_RL_%s_nbs_0.003", dataset, epoch, budget);
+                        resultPath = String.format(this.basePath + "large_graph_epoch_%s_reward_RL_budget_%s_nbs_0.003", dataset, epoch, budget);
+                    } else {
+                        path = String.format(this.basePath  + "gnn_greedy/budget%s_epoch%s_seeds.txt", dataset, epoch, budget);
+                        resultPath = String.format(this.basePath  + "gnn_greedy/budget%s_epoch%s_reward.txt", dataset, epoch, budget);
+                    }
                     double influence = evaluate(S, path);
-                    String resultPath = String.format(this.basePath + "large_graph_epoch_%s_reward_RL_budget_%s_nbs_0.003", dataset, epoch, budget);
                     FileOutputStream out = new FileOutputStream(resultPath);
                     OutputStreamWriter ows = new OutputStreamWriter(out);
                     double coverage = influence / S.hyperGT.size();
@@ -209,7 +232,7 @@ public class InfluenceEvaluation {
         InputStreamReader in = new InputStreamReader(new FileInputStream(path));
         BufferedReader bufferedReader = new BufferedReader(in);
         List<Integer> seeds = new ArrayList<>();
-        if (this.mode.equals("gcomb") || this.mode.equals("gcomb_epoch") || this.mode.equals("imm") || this.mode.equals("interp_imm")) {
+        if (this.mode.equals("gcomb") || this.mode.equals("gcomb_epoch") || this.mode.equals("gnn_greedy") || this.mode.equals("imm") || this.mode.equals("interp_imm")) {
             String seed;
             while ((seed = bufferedReader.readLine()) != null) {
                 seeds.add(Integer.parseInt(seed));
