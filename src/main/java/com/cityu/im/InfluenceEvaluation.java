@@ -73,9 +73,9 @@ public class InfluenceEvaluation {
             for (String file : files) {
                 Matcher matcher = p.matcher(file);
                 if (!matcher.find()) continue;
-                String epoch = matcher.group(2);
                 String budget = matcher.group(1);
-                if (new File(String.format(this.basePath  + "gnn_greedy/budget%s_epoch%s_reward.txt", dataset, epoch, budget)).exists()) {
+                String epoch = matcher.group(2);
+                if (new File(String.format(this.basePath  + "gnn_greedy/budget%s_epoch%s_reward.txt", dataset, budget, epoch)).exists()) {
                     continue;
                 }
                 this.budgetsWithEpochs.putIfAbsent(budget, new ArrayList<>());
@@ -186,8 +186,8 @@ public class InfluenceEvaluation {
                         path = String.format(this.basePath + "large_graph_epoch_%s-result_RL_%s_nbs_0.003", dataset, epoch, budget);
                         resultPath = String.format(this.basePath + "large_graph_epoch_%s_reward_RL_budget_%s_nbs_0.003", dataset, epoch, budget);
                     } else {
-                        path = String.format(this.basePath  + "gnn_greedy/budget%s_epoch%s_seeds.txt", dataset, epoch, budget);
-                        resultPath = String.format(this.basePath  + "gnn_greedy/budget%s_epoch%s_reward.txt", dataset, epoch, budget);
+                        path = String.format(this.basePath  + "gnn_greedy/budget%s_epoch%s_seeds.txt", dataset, budget, epoch);
+                        resultPath = String.format(this.basePath  + "gnn_greedy/budget%s_epoch%s_reward.txt", dataset, budget, epoch);
                     }
                     double influence = evaluate(S, path);
                     FileOutputStream out = new FileOutputStream(resultPath);
