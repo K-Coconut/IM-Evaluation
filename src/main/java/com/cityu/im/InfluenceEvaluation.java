@@ -73,8 +73,8 @@ public class InfluenceEvaluation {
             for (String file : files) {
                 Matcher matcher = p.matcher(file);
                 if (!matcher.find()) continue;
-                String epoch = matcher.group(1);
-                String budget = matcher.group(2);
+                String epoch = matcher.group(2);
+                String budget = matcher.group(1);
                 if (new File(String.format(this.basePath  + "gnn_greedy/budget%s_epoch%s_reward.txt", dataset, epoch, budget)).exists()) {
                     continue;
                 }
